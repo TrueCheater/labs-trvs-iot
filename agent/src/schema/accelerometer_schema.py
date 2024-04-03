@@ -1,5 +1,4 @@
 from marshmallow import Schema, fields
-from agent.src.domain.accelerometer import Accelerometer
 
 
 class AccelerometerSchema(Schema):

@@ -1,7 +1,6 @@
 from marshmallow import Schema, fields
-from agent.src.schema.accelerometer_schema import AccelerometerSchema
-from agent.src.schema.gps_schema import GpsSchema
-from agent.src.domain.aggregated_data import AggregatedData
+from accelerometer_schema import AccelerometerSchema
+from gps_schema import GpsSchema
 
 
 class AggregatedDataSchema(Schema):

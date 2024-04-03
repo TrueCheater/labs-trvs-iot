@@ -1,9 +1,9 @@
 from paho.mqtt import client as mqtt_client
-import json
 import time
 from schema.aggregated_data_schema import AggregatedDataSchema
 from file_datasource import FileDatasource
 import config
+import random
 
 
 def connect_mqtt(broker, port):
@@ -25,10 +25,10 @@ def connect_mqtt(broker, port):
 
 
 def publish(client, topic, datasource, delay):
-    datasource.startReading()
+    datasource.start_reading()
     while True:
         time.sleep(delay)
-        data = datasource.read()
+        data = datasource.read(batch_sise=random.randint(5, 10))
         msg = AggregatedDataSchema().dumps(data)
         result = client.publish(topic, msg)
         # result: [0, 1]
