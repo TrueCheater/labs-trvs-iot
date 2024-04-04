@@ -1,5 +1,6 @@
 from paho.mqtt import client as mqtt_client
 import time
+
 from schema.aggregated_data_schema import AggregatedDataSchema
 from file_datasource import FileDatasource
 import config
@@ -28,7 +29,7 @@ def publish(client, topic, datasource, delay):
     datasource.start_reading()
     while True:
         time.sleep(delay)
-        data = datasource.read(batch_sise=random.randint(5, 10))
+        data = datasource.read(batch_size=random.randint(5, 10))
         msg = AggregatedDataSchema().dumps(data)
         result = client.publish(topic, msg)
         # result: [0, 1]
