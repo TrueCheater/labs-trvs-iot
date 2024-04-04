@@ -4,7 +4,6 @@ import time
 from schema.aggregated_data_schema import AggregatedDataSchema
 from file_datasource import FileDatasource
 import config
-import random
 
 
 def connect_mqtt(broker, port):
@@ -29,16 +28,16 @@ def publish(client, topic, datasource, delay):
     datasource.start_reading()
     while True:
         time.sleep(delay)
-        data = datasource.read(batch_size=random.randint(5, 10))
-        msg = AggregatedDataSchema().dumps(data)
-        result = client.publish(topic, msg)
-        # result: [0, 1]
-        status = result[0]
-        if status == 0:
-            pass
-        # print(f"Send `{msg}` to topic `{topic}`")
-        else:
-            print(f"Failed to send message to topic {topic}")
+        data = datasource.read()
+        for datum in data:
+            msg = AggregatedDataSchema().dumps(datum)
+            result = client.publish(topic, msg)
+            # result: [0, 1]
+            status = result[0]
+            if status == 0:
+                print(f"Send `{msg}` to topic `{topic}`")
+            else:
+                print(f"Failed to send message to topic {topic}")
 
 
 def run():

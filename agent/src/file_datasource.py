@@ -1,3 +1,4 @@
+import random
 from csv import reader
 from datetime import datetime
 
@@ -14,27 +15,40 @@ class FileDatasource:
         self.gps_data = []
         self.last_read_index = 0
 
-    def read(self, batch_size: int) -> AggregatedData:
+    def read(self) -> AggregatedData:
         if not self.accelerometer_data or not self.gps_data:
             print("No data available to read.")
             return None
 
+        batch_size = random.randint(5, 25)
+
         start_index = self.last_read_index
         end_index = min(start_index + batch_size, len(self.accelerometer_data))
-        if end_index == len(self.accelerometer_data):
+        if end_index >= len(self.accelerometer_data):
             print("Reached end of data, resetting read index.")
             self.last_read_index = 0  # Reset to start over
 
         print(f"Reading data from index {start_index} to {end_index}...")
-        accelerometer_rows = self.accelerometer_data[start_index:end_index]
-        gps_rows = self.gps_data[start_index:end_index]
-        self.last_read_index = end_index
 
         aggregated_data = []
-        for accel_row, gps_row in zip(accelerometer_rows, gps_rows):
-            accelerometer = Accelerometer(*accel_row)
-            gps = Gps(*gps_row)
-            aggregated_data.append(AggregatedData(accelerometer, gps, datetime.now()))
+        while start_index < len(self.accelerometer_data):
+            accelerometer_rows = self.accelerometer_data[start_index:end_index]
+            gps_rows = self.gps_data[start_index:end_index]
+
+            for accel_row, gps_row in zip(accelerometer_rows, gps_rows):
+                accelerometer = Accelerometer(*accel_row)
+                gps = Gps(*gps_row)
+                aggregated_data.append(AggregatedData(accelerometer, gps, datetime.now()))
+
+            start_index = end_index
+            end_index = min(start_index + batch_size, len(self.accelerometer_data))
+
+            if end_index >= len(self.accelerometer_data):
+                print("Reached end of data, resetting read index.")
+                self.last_read_index = 0  # Reset to start over
+            else:
+                self.last_read_index = end_index
+
         print("Data reading completed.")
         return aggregated_data
 
