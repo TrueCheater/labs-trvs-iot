@@ -40,9 +40,9 @@ class FileDatasource:
             parking_rows = self.parking_data[start_index:end_index]
 
             for accel_row, gps_row, parking_row in zip(accelerometer_rows, gps_rows, parking_rows):
-                accelerometer = Accelerometer(*accel_row)
-                gps = Gps(*gps_row)
-                parking = Parking(parking_row[0], Gps(parking_row[1], parking_row[2]))
+                accelerometer = Accelerometer(*accel_row, datetime.now())
+                gps = Gps(*gps_row, datetime.now())
+                parking = Parking(parking_row[0], Gps(parking_row[1], parking_row[2], datetime.now()), datetime.now())
                 aggregated_data.append(AggregatedData(accelerometer, gps, parking, datetime.now()))
 
             start_index = end_index

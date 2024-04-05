@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from domain.gps import Gps
 from dataclasses import dataclass
 
@@ -6,3 +8,4 @@ from dataclasses import dataclass
 class Parking:
     empty_count: int
     gps: Gps
+    time: datetime
