@@ -102,9 +102,9 @@ class ProcessedAgentDataInDB(BaseModel):
 @app.post("/processed_agent_data/")
 async def create_processed_agent_data(data: List[ProcessedAgentData]):
     # Insert data to database
-    async with engine.connect() as conn:
+    with engine.connect() as conn:
         for item in data:
-            await conn.execute(processed_agent_data.insert().values(
+            conn.execute(processed_agent_data.insert().values(
                 road_state=item.road_state,
                 x=item.agent_data.accelerometer.x,
                 y=item.agent_data.accelerometer.y,
