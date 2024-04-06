@@ -102,7 +102,7 @@ class ProcessedAgentDataInDB(BaseModel):
 @app.post("/processed_agent_data/")
 async def create_processed_agent_data(data: List[ProcessedAgentData]):
     # Insert data to database
-    with engine.connect() as conn:
+    with engine.begin() as conn:
         for item in data:
             conn.execute(processed_agent_data.insert().values(
                 road_state=item.road_state,
@@ -122,7 +122,7 @@ async def create_processed_agent_data(data: List[ProcessedAgentData]):
 def read_processed_agent_data(processed_agent_data_id: int):
     # Get data by id
     query = processed_agent_data.select().where(processed_agent_data.c.id == processed_agent_data_id)
-    with engine.connect() as conn:
+    with engine.begin() as conn:
         result = conn.execute(query)
         data = result.fetchone()
     if not data:
@@ -134,9 +134,10 @@ def read_processed_agent_data(processed_agent_data_id: int):
 def list_processed_agent_data():
     # Get list of data
     query = processed_agent_data.select()
-    with engine.connect() as conn:
+    with engine.begin() as conn:
         result = conn.execute(query)
-    return [dict(row) for row in result]
+        columns = result.keys()  # Fetch column names
+        return [ProcessedAgentDataInDB(**dict(zip(columns, row))) for row in result]
 
 
 @app.put("/processed_agent_data/{processed_agent_data_id}", response_model=ProcessedAgentDataInDB)
@@ -151,7 +152,7 @@ def update_processed_agent_data(processed_agent_data_id: int, data: ProcessedAge
         longitude=data.agent_data.gps.longitude,
         timestamp=data.agent_data.timestamp
     )
-    with engine.connect() as conn:
+    with engine.begin() as conn:
         conn.execute(query)
     return data.dict()
 
@@ -160,7 +161,7 @@ def update_processed_agent_data(processed_agent_data_id: int, data: ProcessedAge
 def delete_processed_agent_data(processed_agent_data_id: int):
     # Delete by id
     query = processed_agent_data.delete().where(processed_agent_data.c.id == processed_agent_data_id)
-    with engine.connect() as conn:
+    with engine.begin() as conn:
         conn.execute(query)
     return {"message": "Item deleted successfully"}
 
