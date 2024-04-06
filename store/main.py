@@ -4,9 +4,9 @@ import json
 
 from pydantic import BaseModel, field_validator
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Body
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 
-from store.config import POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
+from config import POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
 
 # SQLAlchemy setup
 DATABASE_URL = \
@@ -102,32 +102,67 @@ class ProcessedAgentDataInDB(BaseModel):
 @app.post("/processed_agent_data/")
 async def create_processed_agent_data(data: List[ProcessedAgentData]):
     # Insert data to database
+    async with engine.connect() as conn:
+        for item in data:
+            await conn.execute(processed_agent_data.insert().values(
+                road_state=item.road_state,
+                x=item.agent_data.accelerometer.x,
+                y=item.agent_data.accelerometer.y,
+                z=item.agent_data.accelerometer.z,
+                latitude=item.agent_data.gps.latitude,
+                longitude=item.agent_data.gps.longitude,
+                timestamp=item.agent_data.timestamp
+            ))
     # Send data to subscribers
-    pass
+    await send_data_to_subscribers(data)
+    return {"message": "Data successfully created"}
 
 
 @app.get("/processed_agent_data/{processed_agent_data_id}", response_model=ProcessedAgentDataInDB)
 def read_processed_agent_data(processed_agent_data_id: int):
     # Get data by id
-    pass
+    query = processed_agent_data.select().where(processed_agent_data.c.id == processed_agent_data_id)
+    with engine.connect() as conn:
+        result = conn.execute(query)
+        data = result.fetchone()
+    if not data:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return dict(data)
 
 
 @app.get("/processed_agent_data/", response_model=list[ProcessedAgentDataInDB])
 def list_processed_agent_data():
     # Get list of data
-    pass
+    query = processed_agent_data.select()
+    with engine.connect() as conn:
+        result = conn.execute(query)
+    return [dict(row) for row in result]
 
 
 @app.put("/processed_agent_data/{processed_agent_data_id}", response_model=ProcessedAgentDataInDB)
 def update_processed_agent_data(processed_agent_data_id: int, data: ProcessedAgentData):
     # Update data
-    pass
+    query = processed_agent_data.update().where(processed_agent_data.c.id == processed_agent_data_id).values(
+        road_state=data.road_state,
+        x=data.agent_data.accelerometer.x,
+        y=data.agent_data.accelerometer.y,
+        z=data.agent_data.accelerometer.z,
+        latitude=data.agent_data.gps.latitude,
+        longitude=data.agent_data.gps.longitude,
+        timestamp=data.agent_data.timestamp
+    )
+    with engine.connect() as conn:
+        conn.execute(query)
+    return data.dict()
 
 
 @app.delete("/processed_agent_data/{processed_agent_data_id}", response_model=ProcessedAgentDataInDB)
 def delete_processed_agent_data(processed_agent_data_id: int):
     # Delete by id
-    pass
+    query = processed_agent_data.delete().where(processed_agent_data.c.id == processed_agent_data_id)
+    with engine.connect() as conn:
+        conn.execute(query)
+    return {"message": "Item deleted successfully"}
 
 
 if __name__ == "__main__":
