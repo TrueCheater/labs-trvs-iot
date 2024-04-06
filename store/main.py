@@ -3,9 +3,9 @@ from typing import Set, List
 import json
 
 from pydantic import BaseModel, field_validator
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime, select
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-
+from fastapi.responses import JSONResponse
 from config import POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
 
 # SQLAlchemy setup
@@ -127,7 +127,7 @@ def read_processed_agent_data(processed_agent_data_id: int):
         data = result.fetchone()
     if not data:
         raise HTTPException(status_code=404, detail="Item not found")
-    return dict(data)
+    return data
 
 
 @app.get("/processed_agent_data/", response_model=list[ProcessedAgentDataInDB])
@@ -136,7 +136,7 @@ def list_processed_agent_data():
     query = processed_agent_data.select()
     with engine.begin() as conn:
         result = conn.execute(query)
-        columns = result.keys()  # Fetch column names
+        columns = result.keys()
         return [ProcessedAgentDataInDB(**dict(zip(columns, row))) for row in result]
 
 
@@ -154,16 +154,26 @@ def update_processed_agent_data(processed_agent_data_id: int, data: ProcessedAge
     )
     with engine.begin() as conn:
         conn.execute(query)
-    return data.dict()
+    updated_data = read_processed_agent_data(processed_agent_data_id)
+    if updated_data:
+        return updated_data
+    else:
+        raise HTTPException(status_code=404, detail="Item not found")
 
 
 @app.delete("/processed_agent_data/{processed_agent_data_id}", response_model=ProcessedAgentDataInDB)
 def delete_processed_agent_data(processed_agent_data_id: int):
-    # Delete by id
-    query = processed_agent_data.delete().where(processed_agent_data.c.id == processed_agent_data_id)
+    # Get data by id before deleting
+    query = processed_agent_data.select().where(processed_agent_data.c.id == processed_agent_data_id)
     with engine.begin() as conn:
-        conn.execute(query)
-    return {"message": "Item deleted successfully"}
+        result = conn.execute(query)
+        deleted_data = result.fetchone()
+        if deleted_data is None:
+            return JSONResponse(status_code=404, content={"message": "Item not found"})
+        delete_query = processed_agent_data.delete().where(processed_agent_data.c.id == processed_agent_data_id)
+        conn.execute(delete_query)
+    # Return the deleted item
+    return deleted_data
 
 
 if __name__ == "__main__":
