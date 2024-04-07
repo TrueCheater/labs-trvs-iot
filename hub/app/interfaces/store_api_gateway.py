@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from hub.app.entities.processed_agent_data import ProcessedAgentData
+from app.entities.processed_agent_data import ProcessedAgentData
 
 
 class StoreGateway(ABC):
@@ -19,5 +19,4 @@ class StoreGateway(ABC):
         Returns:
             bool: True if the data is successfully saved, False otherwise.
         """
-
         pass
