@@ -26,15 +26,13 @@ class StoreApiAdapter(StoreGateway):
         headers = {"Content-Type": "application/json"}
         # Convert datetime objects to strings
         processed_data_list = [{
-            **{
+            "road_state": data.road_state,
+            "agent_data": {
                 "accelerometer": data.agent_data.accelerometer.dict(),
                 "gps": data.agent_data.gps.dict(),
                 "timestamp": data.agent_data.timestamp.isoformat()
-            },
-            "road_state": data.road_state
-        }
-            for data in processed_agent_data_batch
-        ]
+            }
+        } for data in processed_agent_data_batch]
         data = json.dumps(processed_data_list)
         response = requests.post(url, headers=headers, data=data)
         if response.status_code == 200:
